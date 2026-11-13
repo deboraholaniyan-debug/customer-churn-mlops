@@ -1,0 +1,45 @@
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+
+# Virtual environment
+.venv/
+venv/
+env/
+
+# IDE
+.vscode/
+.idea/
+
+# Environment variables and credentials
+.env
+.env.*
+!.env.example
+kaggle.json
+
+# Dataset files
+data/raw/*
+data/processed/*
+
+# Model artefacts
+models/*.joblib
+models/*.pkl
+
+# MLflow
+mlruns/
+mlartifacts/
+
+# Temporary files
+*.log
+.DS_Store
+Thumbs.db
+
+# Generated reports
+reports/*.csv
+reports/*.json
+reports/figures/*.png
+# Created by venv; see https://docs.python.org/3/library/venv.html
+
