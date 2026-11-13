@@ -1,0 +1,8 @@
+{
+    "model_name": "ChurnOps-Churn-Predictor",
+    "model_version": "2",
+    "model_alias": "candidate",
+    "model_id": "m-d0fe37b374f14b3187f0218cd1963a00",
+    "source_run_id": "7848c9228008446687c740d744992241",
+    "classification_threshold": 0.54
+}

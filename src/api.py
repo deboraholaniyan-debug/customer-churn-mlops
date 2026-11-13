@@ -1,53 +1,63 @@
 
 from pathlib import Path
-from typing import Literal
+import json
 
-import mlflow
-import mlflow.sklearn
+import joblib
 import pandas as pd
 
 from fastapi import FastAPI, HTTPException
 from pydantic import BaseModel, Field
+from typing import Literal
 
 
 # --------------------------------------------------
-# 1. Project and MLflow configuration
+# 1. Project and deployment configuration
 # --------------------------------------------------
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
-MLFLOW_DATABASE = PROJECT_ROOT / "mlflow.db"
 
-mlflow.set_tracking_uri(
-    f"sqlite:///{MLFLOW_DATABASE.as_posix()}"
+DEPLOYMENT_DIR = PROJECT_ROOT / "deployment"
+
+MODEL_PATH = DEPLOYMENT_DIR / "model.joblib"
+METADATA_PATH = DEPLOYMENT_DIR / "model_metadata.json"
+
+
+# --------------------------------------------------
+# 2. Load deployment metadata
+# --------------------------------------------------
+
+if not METADATA_PATH.exists():
+    raise FileNotFoundError(
+        f"Model metadata not found: {METADATA_PATH}"
+    )
+
+with open(METADATA_PATH, "r", encoding="utf-8") as file:
+    MODEL_METADATA = json.load(file)
+
+
+MODEL_NAME = MODEL_METADATA["model_name"]
+MODEL_VERSION = MODEL_METADATA["model_version"]
+MODEL_ALIAS = MODEL_METADATA["model_alias"]
+
+CHURN_THRESHOLD = float(
+    MODEL_METADATA["classification_threshold"]
 )
 
-MODEL_NAME = "ChurnOps-Churn-Predictor"
-MODEL_ALIAS = "candidate"
-MODEL_URI = f"models:/{MODEL_NAME}@{MODEL_ALIAS}"
-
-CHURN_THRESHOLD = 0.54
-
 
 # --------------------------------------------------
-# 2. Load the registered model
+# 3. Load the exported machine-learning model
 # --------------------------------------------------
 
-model = mlflow.sklearn.load_model(MODEL_URI)
-
-# Retrieve the registered model version for API metadata.
-client = mlflow.tracking.MlflowClient()
-
-try:
-    registered_version = client.get_model_version_by_alias(
-        MODEL_NAME, MODEL_ALIAS
+if not MODEL_PATH.exists():
+    raise FileNotFoundError(
+        f"Model file not found: {MODEL_PATH}"
     )
-    MODEL_VERSION = registered_version.version
-except Exception:
-    MODEL_VERSION = "unknown"
+
+model = joblib.load(MODEL_PATH)
 
 
 # --------------------------------------------------
-# 3. Define the customer input schema
+# 4. Define the customer input schema
 # --------------------------------------------------
 
 class CustomerFeatures(BaseModel):
@@ -98,21 +108,22 @@ class CustomerFeatures(BaseModel):
 
 
 # --------------------------------------------------
-# 4. Initialise FastAPI
+# 5. Initialise FastAPI
 # --------------------------------------------------
 
 app = FastAPI(
     title="ChurnOps Customer Churn Prediction API",
     description=(
-        "An MLflow-backed API for predicting customer churn "
-        "using the registered ChurnOps machine-learning model."
+        "A container-ready API for predicting customer "
+        "churn using a versioned machine-learning model "
+        "exported from the MLflow Model Registry."
     ),
     version="1.0.0"
 )
 
 
 # --------------------------------------------------
-# 5. Health-check endpoint
+# 6. Health-check endpoint
 # --------------------------------------------------
 
 @app.get("/health")
@@ -127,7 +138,7 @@ def health_check():
 
 
 # --------------------------------------------------
-# 6. Customer churn prediction endpoint
+# 7. Customer churn prediction endpoint
 # --------------------------------------------------
 
 @app.post("/predict")
@@ -144,7 +155,7 @@ def predict_churn(customer: CustomerFeatures):
             model.predict_proba(input_data)[0, 1]
         )
 
-        # Apply the optimised classification threshold.
+        # Apply the threshold recorded in deployment metadata.
         predicted_churn = (
             churn_probability >= CHURN_THRESHOLD
         )
