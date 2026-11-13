@@ -43,3 +43,5 @@ reports/*.json
 reports/figures/*.png
 # Created by venv; see https://docs.python.org/3/library/venv.html
 
+# Pytest
+.pytest_cache/
