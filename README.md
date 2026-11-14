@@ -1,14 +1,14 @@
 # ChurnOps
 
-## An End-to-End MLOps Pipeline for Customer Churn Prediction, Explainability and Deployment
+## An End-to-End MLOps Platform for Customer Churn Prediction, Explainability and Monitoring
 
-ChurnOps is an end-to-end Machine Learning Operations (MLOps) project that demonstrates the development, evaluation, explainability, management and deployment of a customer churn prediction model.
+ChurnOps is an end-to-end Machine Learning Operations (MLOps) project designed to demonstrate how machine learning models can be developed, evaluated, interpreted, deployed and monitored within an integrated application.
 
-Built using the IBM Telco Customer Churn dataset, the project implements a reproducible machine learning workflow covering data preprocessing, exploratory data analysis, model development, hyperparameter optimisation, classification threshold selection, SHAP-based explainability, MLflow experiment tracking and model registration.
+The platform uses the IBM Telco Customer Churn dataset to develop a predictive model that estimates the likelihood of customer attrition. It combines machine learning experimentation, model explainability, experiment tracking, API development, containerisation, automated testing and operational monitoring.
 
-The trained model is served through a FastAPI REST API, packaged using Docker and published to the GitHub Container Registry (GHCR). Automated testing and container image publishing are integrated into GitHub Actions.
+ChurnOps also includes a customer-facing web application built with Next.js. Users can register, log in and submit individual customer information through a structured prediction form. The application communicates with a deployed FastAPI prediction service through a server-side proxy, keeping the prediction API credentials away from the browser.
 
-The project also establishes a foundation for subsequent implementation of production-oriented model monitoring, data versioning and automated retraining.
+The project demonstrates the integration of machine learning engineering, backend development, frontend application development and MLOps practices in a unified workflow.
 
 ## Project Objectives
 
@@ -22,13 +22,70 @@ The project also establishes a foundation for subsequent implementation of produ
 - Containerise the prediction service using Docker.
 - Implement automated testing and continuous integration using GitHub Actions.
 - Publish versioned Docker images to GitHub Container Registry.
-- Establish a foundation for model monitoring, data versioning and automated retraining.
+- Develop a customer-facing prediction application using Next.js.
+- Implement user authentication using Supabase.
+- Integrate the web application with the deployed prediction API.
+- Establish data drift monitoring and operational reporting components.
+
+## System Architecture
+
+ChurnOps consists of four main components:
+
+1. **Machine learning and MLOps layer:** Handles data preparation, model development, evaluation, explainability, experiment tracking and model registration.
+2. **Prediction API:** Serves the trained model through FastAPI and is deployed on Render.
+3. **Web application:** Provides the customer-facing interface through which authenticated users submit customer information and receive prediction results.
+4. **Monitoring layer:** Contains reference datasets, simulated production data, drift assessment scripts and monitoring reports.
+
+### Application workflow
+
+```text
+                 CUSTOMER
+                     |
+                     v
+          Next.js Web Application
+             (Frontend)
+                     |
+                     v
+            Supabase Authentication
+                     |
+                     v
+          Next.js Server-side Proxy
+                     |
+                     v
+             FastAPI Prediction API
+                  (Render)
+                     |
+                     v
+             Churn Prediction Model
+                     |
+                     v
+          Prediction Result Returned
+                     |
+                     v
+             Customer Dashboard
+
+
+       Monitoring and MLOps Workflow
+
+       Reference Dataset
+              |
+              v
+       Simulated Production Data
+              |
+              v
+       Drift Assessment Scripts
+              |
+              v
+       Monitoring Reports
+```
+
+The prediction API key is stored in the server-side environment configuration and is not exposed to the browser.
 
 ## Dataset
 
 **IBM Telco Customer Churn Dataset**
 
-Source: [Kaggle – IBM Telco Customer Churn](https://www.kaggle.com/datasets/blastchar/ibm-telco-customer-churn)
+Source: [Kaggle – IBM Telco Customer Churn Dataset](https://www.kaggle.com/datasets/blastchar/ibm-telco-customer-churn)
 
 The dataset contains 7,043 customer records and 21 original variables describing customer demographics, account information, subscribed services, billing arrangements and churn status.
 
@@ -63,10 +120,14 @@ The cleaned dataset contains 7,043 records with no remaining missing values.
 | Testing | Pytest |
 | Containerisation | Docker, Docker Compose |
 | CI/CD | GitHub Actions |
-| Container registry | GitHub Container Registry (GHCR) |
+| Container registry | GitHub Container Registry |
+| Frontend | Next.js, React, TypeScript |
+| Styling | Tailwind CSS |
+| Authentication and database | Supabase |
+| Backend deployment | Render |
 | Version control | Git and GitHub |
 
-## Implemented Pipeline
+## Machine Learning Pipeline
 
 ### 1. Data cleaning and preprocessing
 
@@ -82,7 +143,7 @@ Visualisations are generated and stored in the project reports directory.
 
 Logistic Regression and Random Forest classifiers are evaluated using a consistent training and validation strategy.
 
-The Logistic Regression model is selected based on cross-validation performance.
+The Logistic Regression model is selected for the deployed prediction service.
 
 ### 4. Hyperparameter optimisation
 
@@ -92,7 +153,7 @@ GridSearchCV is used to optimise Logistic Regression hyperparameters, including 
 
 The classification threshold is selected using out-of-fold predictions from the training partition rather than optimising directly against the test set.
 
-The selected threshold is 0.54.
+The selected classification threshold is **0.54**.
 
 ### 6. Model explainability
 
@@ -100,43 +161,17 @@ SHAP is applied to the optimised Logistic Regression model to examine feature co
 
 The analysis identifies customer tenure, contract type, total charges and internet service characteristics among the influential predictive features.
 
-SHAP contributions indicate model attribution, not causal relationships.
+SHAP contributions represent model attribution and should not be interpreted as evidence of causal relationships.
 
 ### 7. Experiment tracking and model management
 
-MLflow is used to record model parameters, evaluation metrics and relevant experiment artifacts.
+MLflow is used to record model parameters, evaluation metrics and relevant experiment artefacts.
 
-The selected model is registered as `ChurnOps-Churn-Predictor`, with version 2 assigned the `candidate` alias.
+The selected model is registered as:
 
-### 8. API development
+`ChurnOps-Churn-Predictor`
 
-A FastAPI service exposes the trained model through REST endpoints.
-
-| Endpoint | Method | Purpose |
-|---|---|---|
-| `/health` | GET | Checks service health and model metadata |
-| `/predict` | POST | Generates a customer churn prediction |
-| `/docs` | GET | Provides interactive API documentation |
-
-The prediction response includes the predicted churn class, estimated churn probability, classification threshold and model version.
-
-### 9. Containerisation and deployment
-
-The inference service is packaged using Docker. Docker Compose provides a convenient local deployment configuration, including port mapping, restart policy and container health checks.
-
-The Docker image is published to GitHub Container Registry.
-
-**Published image:**
-
-`ghcr.io/deboraholaniyan-debug/customer-churn-mlops:latest`
-
-Version-specific image tags are also published to support traceability.
-
-### 10. Automated testing and CI/CD
-
-GitHub Actions automates the testing and Docker build workflow.
-
-The pipeline installs project dependencies, executes API tests and builds the Docker image. On pushes to the main branch, the workflow also publishes the image to GHCR.
+The deployed model is version 2.
 
 ## Model Evaluation
 
@@ -153,15 +188,35 @@ The threshold-optimised Logistic Regression model achieved the following results
 
 The classification threshold of 0.54 was selected using out-of-fold predictions from the training partition.
 
-Compared with the default threshold of 0.50, the selected threshold produced a modest improvement in F1-score, from 61.76% to 62.06%, with a corresponding reduction in recall.
+ROC-AUC and PR-AUC evaluate the model's ranking performance across classification thresholds, while precision, recall, F1-score and accuracy depend on the selected decision threshold.
 
-ROC-AUC and PR-AUC remained unchanged because threshold selection changes the classification decision boundary rather than the model's underlying probability ranking.
+## Backend API
 
-## Live Inference Example
+The prediction service is developed using FastAPI and deployed on Render.
 
-The deployed API was tested using the published GHCR image.
+**Deployed API:**
 
-Example response:
+https://customer-churn-mlops-sha-38eb8e5.onrender.com
+
+### API endpoints
+
+| Endpoint | Method | Purpose |
+|---|---|---|
+| `/health` | GET | Checks service health and model metadata |
+| `/predict` | POST | Generates a customer churn prediction |
+| `/docs` | GET | Provides interactive API documentation |
+
+The `/predict` endpoint requires API-key authentication through the `X-API-Key` request header.
+
+The prediction response includes:
+
+- Predicted churn class.
+- Estimated churn probability.
+- Classification threshold.
+- Model name.
+- Model version.
+
+### Example prediction response
 
 ```json
 {
@@ -173,7 +228,85 @@ Example response:
 }
 ```
 
-This demonstrates a successful inference request against the containerised service. The probability represents the model's estimate for the supplied customer record, not a guaranteed future outcome.
+The example illustrates the response format. The probability represents the model's estimate for the supplied customer record, not a guaranteed future outcome.
+
+## Customer-facing Web Application
+
+ChurnOps includes a web application developed with Next.js, React, TypeScript and Tailwind CSS.
+
+The application provides an interface for authenticated users to submit individual customer information and obtain churn predictions from the deployed machine learning model.
+
+### Implemented functionality
+
+- User registration.
+- User login and session management.
+- Protected dashboard and prediction routes.
+- Structured customer information form.
+- Individual customer churn prediction.
+- Customer-friendly prediction result presentation.
+- Churn probability visualisation.
+- Classification outcome and threshold display.
+- Server-side communication with the FastAPI service.
+
+### Authentication and security
+
+Supabase provides authentication and session management.
+
+The frontend uses a server-side API proxy to communicate with the FastAPI service. The prediction API key is stored in server-side environment variables rather than exposed in client-side code.
+
+The application uses environment variables for service configuration. Credentials and secrets must not be committed to the Git repository.
+
+**Deployment status:** The frontend implementation is available in the repository. Public deployment through Vercel remains a separate deployment step.
+
+## Model Monitoring and Drift Assessment
+
+The project includes monitoring components designed to support the assessment of changes between reference data and simulated production data.
+
+The monitoring implementation includes:
+
+- Reference monitoring datasets.
+- Simulated production batch data.
+- Data preparation scripts.
+- Data drift assessment scripts.
+- Monitoring run assessment.
+- Generated HTML and JSON monitoring reports.
+- Prediction drift comparison outputs.
+
+Monitoring-related files are organised under:
+
+- `data/monitoring/`
+- `data/simulated/`
+- `reports/monitoring/`
+- `src/`
+
+These components establish a foundation for operational monitoring. They should not be interpreted as evidence of continuous live monitoring or automated model retraining.
+
+## Containerisation and CI/CD
+
+The FastAPI inference service is packaged using Docker.
+
+Docker Compose provides a convenient local deployment configuration, including port mapping, restart policy and container health checks.
+
+The Docker image is published to GitHub Container Registry (GHCR).
+
+### Published container image
+
+`ghcr.io/deboraholaniyan-debug/customer-churn-mlops:latest`
+
+Version-specific image tags are also published to support traceability.
+
+### GitHub Actions
+
+GitHub Actions automates the backend testing and Docker build workflow.
+
+The pipeline includes:
+
+- Dependency installation.
+- Automated API tests using Pytest.
+- Docker image build.
+- Container health and integration checks.
+- Container image publishing to GHCR.
+- Render deployment triggering.
 
 ## Project Structure
 
@@ -182,49 +315,71 @@ customer-churn-mlops/
 │
 ├── data/
 │   ├── raw/
-│   └── processed/
+│   ├── processed/
+│   ├── monitoring/
+│   │   ├── reference_data.csv
+│   │   └── reference_labels.csv
+│   └── simulated/
+│       └── simulated_production_batch_001.csv
+│
+├── frontend/
+│   ├── app/
+│   │   ├── (protected)/
+│   │   │   ├── layout.tsx
+│   │   │   ├── page.tsx
+│   │   │   └── new-prediction/
+│   │   │       └── page.tsx
+│   │   ├── api/
+│   │   │   └── predict/
+│   │   │       └── route.ts
+│   │   ├── auth/
+│   │   │   └── callback/
+│   │   │       └── route.ts
+│   │   ├── login/
+│   │   ├── signup/
+│   │   ├── globals.css
+│   │   └── layout.tsx
+│   ├── lib/
+│   │   └── supabase/
+│   │       ├── client.ts
+│   │       ├── proxy.ts
+│   │       └── server.ts
+│   ├── package.json
+│   ├── package-lock.json
+│   └── proxy.ts
 │
 ├── src/
-│   ├── data_cleaning.py
-│   ├── train.py
-│   ├── tune_logistic_regression.py
-│   ├── threshold_optimization.py
-│   ├── explain_model.py
-│   ├── track_experiments.py
-│   ├── register_model.py
-│   ├── export_model.py
-│   └── api.py
-│
-├── models/
+│   ├── assess_monitoring_run.py
+│   ├── monitor_data_drift.py
+│   └── prepare_monitoring_data.py
 │
 ├── deployment/
 │   ├── model.joblib
 │   └── model_metadata.json
 │
 ├── reports/
-│   └── figures/
+│   ├── figures/
+│   └── monitoring/
+│       ├── data_drift_report.html
+│       ├── data_drift_report.json
+│       ├── monitoring_alert.json
+│       ├── monitoring_summary.json
+│       └── prediction_drift_comparison.csv
 │
 ├── tests/
-│   └── test_api.py
-│
 ├── .github/
 │   └── workflows/
-│       └── ci.yml
-│
 ├── Dockerfile
 ├── compose.yaml
-├── .dockerignore
 ├── requirements.txt
 ├── requirements-dev.txt
-├── pytest.ini
-├── eda.py
 ├── README.md
 └── .gitignore
 ```
 
-*Note: This structure represents the principal project components; additional files and directories support experiment tracking and local development.*
+*The structure above highlights the principal components. Additional files support model development, API deployment, testing and local development.*
 
-## Running the Project Locally
+## Running the Backend Locally
 
 ### 1. Clone the repository
 
@@ -234,19 +389,19 @@ git clone https://github.com/deboraholaniyan-debug/customer-churn-mlops.git
 cd customer-churn-mlops
 ```
 
-### 2. Create and activate a virtual environment
+### 2. Create a virtual environment
 
 ```bash
 python -m venv .venv
 ```
 
-Linux / WSL:
+Activate it on Linux or WSL:
 
 ```bash
 source .venv/bin/activate
 ```
 
-Windows PowerShell:
+On Windows PowerShell:
 
 ```powershell
 .venv\Scripts\Activate.ps1
@@ -275,46 +430,108 @@ The API will be accessible at:
 - API health: `http://localhost:8000/health`
 - Interactive documentation: `http://localhost:8000/docs`
 
+The prediction endpoint requires a valid API key configured for the local service.
+
 ### 6. Stop the service
 
 ```bash
 docker compose down
 ```
 
+## Frontend Configuration
+
+The frontend is located in the `frontend/` directory.
+
+### 1. Navigate to the frontend
+
+```bash
+cd frontend
+```
+
+### 2. Install dependencies
+
+```bash
+npm install
+```
+
+### 3. Configure environment variables
+
+Create a `.env.local` file in the `frontend/` directory.
+
+Configure the following variables using your own service credentials:
+
+```env
+NEXT_PUBLIC_SUPABASE_URL=your_supabase_project_url
+NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY=your_supabase_publishable_key
+CHURN_API_URL=your_render_api_url
+CHURN_API_KEY=your_prediction_api_key
+```
+
+Do not commit `.env.local` or expose the prediction API key through a `NEXT_PUBLIC_` variable.
+
+### 4. Start the development server
+
+```bash
+npm run dev
+```
+
+Open:
+
+`http://localhost:3000`
+
+Supabase authentication must also be configured with the appropriate application URL and authentication redirect settings.
+
 ## Current Project Status
 
-**Implemented and tested**
+### Implemented components
 
 - Data cleaning and preprocessing.
 - Exploratory data analysis.
 - Model development and evaluation.
 - Hyperparameter optimisation.
 - Classification threshold optimisation.
-- SHAP explainability.
+- SHAP-based model explainability.
 - MLflow experiment tracking and model registration.
 - Model export and version metadata.
-- FastAPI inference service.
-- Docker and Docker Compose deployment.
-- Automated API tests.
-- GitHub Actions CI workflow.
+- FastAPI prediction service.
+- API-key authentication.
+- Docker and Docker Compose configuration.
+- Automated API testing.
+- GitHub Actions CI/CD workflow.
 - GHCR image publishing.
-- Container health and restart validation.
+- Render backend deployment.
+- Next.js customer-facing frontend.
+- Supabase user registration and authentication.
+- Individual customer prediction interface.
+- Server-side prediction API integration.
+- Monitoring reference datasets.
+- Simulated production data.
+- Data drift assessment scripts and monitoring reports.
 
-**Planned enhancements**
+### Further development opportunities
 
-- Data versioning using DVC.
-- Data and model drift monitoring using Evidently.
-- Automated model retraining and evaluation workflows.
-- Model performance monitoring over time.
-- Deployment to a public cloud environment.
-- Enhanced operational dashboards and observability.
+- Deploy the frontend to Vercel.
+- Implement tenant-aware organisation management.
+- Introduce persistent customer prediction history.
+- Integrate monitoring results into the web dashboard.
+- Implement scheduled monitoring and alerting.
+- Introduce automated model retraining and evaluation workflows.
+- Add model performance monitoring using verified production outcomes.
+- Implement data versioning using DVC.
+- Extend the API to support batch predictions.
 
 ## Project Repository
 
-[GitHub – ChurnOps](https://github.com/deboraholaniyan-debug/customer-churn-mlops)
+**GitHub:**  
+https://github.com/deboraholaniyan-debug/customer-churn-mlops
+
+**Backend API:**  
+https://customer-churn-mlops-sha-38eb8e5.onrender.com
 
 ## Research and Engineering Direction
 
-ChurnOps is being developed as a practical demonstration of how machine learning models can move beyond experimentation into reproducible, explainable and deployable services.
+ChurnOps demonstrates how machine learning models can move beyond experimentation into reproducible, explainable and deployable services.
 
-The broader engineering objective is to establish a maintainable lifecycle in which model development, experiment tracking, deployment, monitoring and model updates are integrated into a consistent workflow.
+The project brings together predictive analytics, model governance, API engineering, application development and monitoring within a practical MLOps architecture.
+
+Its broader engineering direction is to establish a maintainable machine learning lifecycle in which experimentation, model management, deployment, monitoring and future model updates operate as connected components.
