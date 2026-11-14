@@ -17,6 +17,8 @@ env:
 jobs:
   test-and-build:
     runs-on: ubuntu-latest
+    env:
+      CHURNOPS_API_KEY: ${{ secrets.CHURNOPS_API_KEY }}
 
     steps:
       - name: Checkout repository
@@ -66,6 +68,7 @@ jobs:
           docker run -d \
             --name churnops-api-test \
             -p 8000:8000 \
+            -e CHURNOPS_API_KEY \
             churnops-api:test
 
       - name: Wait for API health check
@@ -89,6 +92,7 @@ jobs:
           RESPONSE=$(curl --fail --silent --show-error \
             -X POST http://localhost:8000/predict \
             -H "Content-Type: application/json" \
+            -H "X-API-Key: ${CHURNOPS_API_KEY}" \
             -d '{
               "gender": "Female",
               "SeniorCitizen": 0,

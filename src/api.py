@@ -1,11 +1,13 @@
 
 from pathlib import Path
 import json
+import os
+import secrets
 
 import joblib
 import pandas as pd
 
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Header, Depends
 from pydantic import BaseModel, Field
 from typing import Literal
 
@@ -34,7 +36,6 @@ if not METADATA_PATH.exists():
 with open(METADATA_PATH, "r", encoding="utf-8") as file:
     MODEL_METADATA = json.load(file)
 
-
 MODEL_NAME = MODEL_METADATA["model_name"]
 MODEL_VERSION = MODEL_METADATA["model_version"]
 MODEL_ALIAS = MODEL_METADATA["model_alias"]
@@ -57,7 +58,43 @@ model = joblib.load(MODEL_PATH)
 
 
 # --------------------------------------------------
-# 4. Define the customer input schema
+# 4. API authentication configuration
+# --------------------------------------------------
+
+CHURNOPS_API_KEY = os.getenv("CHURNOPS_API_KEY")
+
+
+def verify_api_key(
+    x_api_key: str | None = Header(
+        default=None,
+        alias="X-API-Key"
+    )
+):
+    """
+    Validate the API key supplied in the request header.
+    """
+
+    if not CHURNOPS_API_KEY:
+        raise HTTPException(
+            status_code=503,
+            detail="API authentication is not configured."
+        )
+
+    if (
+        not x_api_key
+        or not secrets.compare_digest(
+            x_api_key,
+            CHURNOPS_API_KEY
+        )
+    ):
+        raise HTTPException(
+            status_code=401,
+            detail="Invalid or missing API key."
+        )
+
+
+# --------------------------------------------------
+# 5. Define the customer input schema
 # --------------------------------------------------
 
 class CustomerFeatures(BaseModel):
@@ -108,7 +145,7 @@ class CustomerFeatures(BaseModel):
 
 
 # --------------------------------------------------
-# 5. Initialise FastAPI
+# 6. Initialise FastAPI
 # --------------------------------------------------
 
 app = FastAPI(
@@ -116,14 +153,15 @@ app = FastAPI(
     description=(
         "A container-ready API for predicting customer "
         "churn using a versioned machine-learning model "
-        "exported from the MLflow Model Registry."
+        "exported from the MLflow Model Registry. "
+        "Prediction requests require API-key authentication."
     ),
-    version="1.0.0"
+    version="1.1.0"
 )
 
 
 # --------------------------------------------------
-# 6. Health-check endpoint
+# 7. Health-check endpoint
 # --------------------------------------------------
 
 @app.get("/health")
@@ -138,24 +176,24 @@ def health_check():
 
 
 # --------------------------------------------------
-# 7. Customer churn prediction endpoint
+# 8. Customer churn prediction endpoint
 # --------------------------------------------------
 
 @app.post("/predict")
-def predict_churn(customer: CustomerFeatures):
+def predict_churn(
+    customer: CustomerFeatures,
+    authenticated: None = Depends(verify_api_key)
+):
 
     try:
-        # Convert validated input into a DataFrame.
         input_data = pd.DataFrame(
             [customer.model_dump()]
         )
 
-        # Obtain the probability of class 1 (Churn = Yes).
         churn_probability = float(
             model.predict_proba(input_data)[0, 1]
         )
 
-        # Apply the threshold recorded in deployment metadata.
         predicted_churn = (
             churn_probability >= CHURN_THRESHOLD
         )
@@ -172,8 +210,8 @@ def predict_churn(customer: CustomerFeatures):
             "model_version": MODEL_VERSION
         }
 
-    except Exception as error:
+    except Exception:
         raise HTTPException(
             status_code=500,
-            detail=f"Prediction failed: {str(error)}"
+            detail="Prediction failed. Please contact the API administrator."
         )
