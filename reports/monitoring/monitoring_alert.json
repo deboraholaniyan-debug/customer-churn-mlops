@@ -1,0 +1,67 @@
+{
+    "project": "ChurnOps",
+    "experiment": "Simulated Drift Monitoring",
+    "data_status": "SIMULATED - NOT REAL PRODUCTION DATA",
+    "monitoring_timestamp_utc": "2026-11-13T21:58:33.968059+00:00",
+    "monitoring_status": "CRITICAL",
+    "model": {
+        "name": "ChurnOps-Churn-Predictor",
+        "version": "2"
+    },
+    "feature_drift": {
+        "total_features": 19,
+        "drifted_features": 4,
+        "drift_share": 0.2105,
+        "affected_features": [
+            {
+                "feature": "tenure",
+                "drift_score": 0.49,
+                "threshold": 0.1,
+                "status": "FAIL",
+                "drift_detected": true
+            },
+            {
+                "feature": "Contract",
+                "drift_score": 0.18,
+                "threshold": 0.1,
+                "status": "FAIL",
+                "drift_detected": true
+            },
+            {
+                "feature": "PaymentMethod",
+                "drift_score": 0.14,
+                "threshold": 0.1,
+                "status": "FAIL",
+                "drift_detected": true
+            },
+            {
+                "feature": "TotalCharges",
+                "drift_score": 0.37,
+                "threshold": 0.1,
+                "status": "FAIL",
+                "drift_detected": true
+            }
+        ],
+        "overall_evidently_test": {
+            "name": "Share of Drifted Columns: Less 0.500",
+            "description": "Share of Drifted Columns: Actual value 0.211 < 0.500",
+            "status": "SUCCESS"
+        }
+    },
+    "prediction_drift": {
+        "psi": 0.26980654452074765,
+        "warning_threshold": 0.1,
+        "critical_threshold": 0.25
+    },
+    "alert_reasons": [
+        "4 features exceeded their drift thresholds.",
+        "Prediction PSI (0.2698) reached the critical threshold."
+    ],
+    "policy": {
+        "feature_warning_count": 1,
+        "feature_critical_count": 3,
+        "prediction_psi_warning": 0.1,
+        "prediction_psi_critical": 0.25,
+        "policy_status": "INITIAL - REQUIRES CALIBRATION"
+    }
+}

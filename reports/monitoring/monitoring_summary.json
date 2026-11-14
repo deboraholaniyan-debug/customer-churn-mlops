@@ -1,0 +1,24 @@
+{
+    "experiment": "ChurnOps Simulated Drift Monitoring",
+    "data_status": "SIMULATED - NOT REAL PRODUCTION DATA",
+    "random_state": 42,
+    "reference_records": 5634,
+    "simulated_records": 1500,
+    "model_name": "ChurnOps-Churn-Predictor",
+    "model_version": "2",
+    "classification_threshold": 0.54,
+    "prediction_drift": {
+        "psi": 0.26980654452074765,
+        "reference_mean_churn_probability": 0.41465857708497017,
+        "simulated_mean_churn_probability": 0.565485780471545,
+        "reference_predicted_churn_rate_percent": 37.930422435214766,
+        "simulated_predicted_churn_rate_percent": 59.53333333333334,
+        "predicted_churn_rate_change_percentage_points": 21.602910898118573
+    },
+    "limitations": [
+        "The current batch is simulated using weighted resampling.",
+        "Detected drift does not establish model performance degradation.",
+        "Actual production labels are required for outcome-based evaluation.",
+        "Prediction drift is not evidence of causal change."
+    ]
+}
